@@ -12,9 +12,15 @@
         
         <div class="controls">
             <div class="input-group">
-                <label for="certificateText">Personalize o Certificado (max 40 caracteres):</label>
-                <input type="text" id="certificateText" maxlength="40" placeholder="Homenagem a .....">
-                <span class="char-counter">0/40</span>
+                <label for="donorText">De (max 25 caracteres):</label>
+                <input type="text" id="donorText" maxlength="25" placeholder="Nome do doador">
+                <span class="char-counter" id="donorCounter">0/25</span>
+            </div>
+            
+            <div class="input-group">
+                <label for="receiverText">Para (max 25 caracteres):</label>
+                <input type="text" id="receiverText" maxlength="25" placeholder="Nome do beneficiário">
+                <span class="char-counter" id="receiverCounter">0/25</span>
             </div>
             
             <div class="input-group">

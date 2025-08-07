@@ -2,7 +2,8 @@ class CertificateGenerator {
     constructor() {
         this.canvas = document.getElementById('certificateCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.textInput = document.getElementById('certificateText');
+        this.donorInput = document.getElementById('donorText');
+        this.receiverInput = document.getElementById('receiverText');
         this.imageUpload = document.getElementById('imageUpload');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.cropBtn = document.getElementById('cropBtn');
@@ -11,7 +12,8 @@ class CertificateGenerator {
         this.confirmCropBtn = document.getElementById('confirmCropBtn');
         this.cancelCropBtn = document.getElementById('cancelCropBtn');
         this.dragHandle = document.getElementById('dragHandle');
-        this.charCounter = document.querySelector('.char-counter');
+        this.donorCounter = document.getElementById('donorCounter');
+        this.receiverCounter = document.getElementById('receiverCounter');
         
         this.backgroundImage = null;
         this.uploadedImage = null;
@@ -32,7 +34,7 @@ class CertificateGenerator {
     
     init() {
         this.bindEvents();
-        this.updateCharCounter();
+        this.updateCharCounters();
 
         // Wait for the custom font to be loaded before drawing
         document.fonts.load('300 1em "Futura Lt BT"').then(() => {
@@ -86,8 +88,13 @@ class CertificateGenerator {
     }
     
     bindEvents() {
-        this.textInput.addEventListener('input', () => {
-            this.updateCharCounter();
+        this.donorInput.addEventListener('input', () => {
+            this.updateCharCounters();
+            this.redrawCertificate();
+        });
+        
+        this.receiverInput.addEventListener('input', () => {
+            this.updateCharCounters();
             this.redrawCertificate();
         });
         
@@ -124,10 +131,15 @@ class CertificateGenerator {
         });
     }
     
-    updateCharCounter() {
-        const length = this.textInput.value.length;
-        this.charCounter.textContent = `${length}/40`;
-        this.charCounter.style.color = length > 35 ? '#dc3545' : '#6c757d';
+    updateCharCounters() {
+        const donorLength = this.donorInput.value.length;
+        const receiverLength = this.receiverInput.value.length;
+        
+        this.donorCounter.textContent = `${donorLength}/25`;
+        this.donorCounter.style.color = donorLength > 20 ? '#dc3545' : '#6c757d';
+        
+        this.receiverCounter.textContent = `${receiverLength}/25`;
+        this.receiverCounter.style.color = receiverLength > 20 ? '#dc3545' : '#6c757d';
     }
     
     handleImageUpload(e) {
@@ -199,24 +211,43 @@ class CertificateGenerator {
         }
         
         // Draw custom text at bottom
-        if (this.textInput.value.trim()) {
+        const donorText = this.donorInput.value.trim();
+        const receiverText = this.receiverInput.value.trim();
+        
+        if (donorText || receiverText) {
             this.ctx.fillStyle = '#2c3e50';
             this.ctx.font = '300 64px "Futura Lt BT", "Futura", "Trebuchet MS", "Arial", sans-serif';
-            this.ctx.textAlign = 'center';
+            
+            const lineHeight = 70; // Space between lines
+            let textLines = [];
+            
+            if (donorText) {
+                textLines.push("De: " + donorText);
+            }
+            
+            if (receiverText) {
+                textLines.push("Para: " + receiverText);
+            }
 
-            const text = "De: " + this.textInput.value;
-            const x = this.canvas.width / 2;
-            const maxWidth = this.canvas.width * 0.7; // Max width for text block
-            const lineHeight = 70; // Space between lines (increased for 56px font)
-            const lines = this._getWrappedLines(text, maxWidth);
+            // Calculate the widest line to determine the block width
+            let maxLineWidth = 0;
+            textLines.forEach(line => {
+                const lineWidth = this.ctx.measureText(line).width;
+                maxLineWidth = Math.max(maxLineWidth, lineWidth);
+            });
 
-            // Calculate starting Y to vertically center the block of text, moved up by 5%
+            // Calculate starting positions to center the text block
+            const blockCenterX = this.canvas.width / 2;
+            const blockStartX = blockCenterX - maxLineWidth / 2;
+            
             const blockCenterY = this.canvas.height * 0.75;
-            const totalTextHeight = (lines.length - 1) * lineHeight;
+            const totalTextHeight = (textLines.length - 1) * lineHeight;
             const startY = blockCenterY - totalTextHeight / 2;
 
-            lines.forEach((line, index) => {
-                this.ctx.fillText(line, x, startY + (index * lineHeight));
+            // Draw text with left alignment relative to the block
+            this.ctx.textAlign = 'left';
+            textLines.forEach((line, index) => {
+                this.ctx.fillText(line, blockStartX, startY + (index * lineHeight));
             });
         }
     }
