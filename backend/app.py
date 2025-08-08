@@ -174,6 +174,8 @@ def list_tokens():
         app.logger.error(f"Error listing tokens: {str(e)}")
         return jsonify({"error": "Failed to list tokens"}), 500
 
+# Initialize database tables
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
