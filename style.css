@@ -34,8 +34,8 @@ body {
 h1 {
     text-align: center;
     padding: 30px;
-    background-color: #50b848;
-    color: white;
+    background-color: white;
+    color: #50b848;
     font-size: 2.5rem;
     margin: 0;
 }
