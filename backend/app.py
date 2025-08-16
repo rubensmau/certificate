@@ -63,13 +63,13 @@ def serve_index():
     return send_file("../index.html")
 
 
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health_check():
     """Health check endpoint"""
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
 
-@app.route("/certificate", methods=["POST"])
+@app.route("/api/certificate", methods=["POST"])
 def store_certificate():
     """Store certificate data (token, de, para) without validation"""
     try:
@@ -122,7 +122,7 @@ def store_certificate():
         return jsonify({"error": "Failed to store certificate"}), 500
 
 
-@app.route("/tokens", methods=["GET"])
+@app.route("/api/tokens", methods=["GET"])
 def list_tokens():
     """List all tokens (admin endpoint)"""
     try:
