@@ -389,8 +389,14 @@ class CertificateGenerator {
     
     async downloadCertificate() {
         try {
+            // Disable download button to prevent multiple clicks
+            this.downloadBtn.disabled = true;
+            this.downloadBtn.textContent = 'Salvando...';
+            
             // Send certificate data to backend first
             await this.sendCertificateDataToBackend();
+            
+            this.downloadBtn.textContent = 'Baixando...';
             
             // Then proceed with download
             // Check if canvas is tainted
@@ -402,8 +408,16 @@ class CertificateGenerator {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            
+            // Re-enable button
+            this.downloadBtn.disabled = false;
+            this.downloadBtn.textContent = 'Download do Certificado';
+            
         } catch (error) {
             console.error('Download failed:', error);
+            this.downloadBtn.disabled = false;
+            this.downloadBtn.textContent = 'Download do Certificado';
+            
             if (error.name === 'SecurityError') {
                 alert('Download failed due to security restrictions. Please serve this page through a web server (not file://).');
             } else {

@@ -23,15 +23,23 @@ def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
     
+    # First, create table without UNIQUE constraint
     cur.execute('''
         CREATE TABLE IF NOT EXISTS tokens (
             id SERIAL PRIMARY KEY,
-            token VARCHAR(255) UNIQUE NOT NULL,
+            token VARCHAR(255) NOT NULL,
             de VARCHAR(255),
             para VARCHAR(255),
             created_at TIMESTAMP DEFAULT NOW()
         );
     ''')
+    
+    # Remove UNIQUE constraint if it exists (for existing databases)
+    try:
+        cur.execute('ALTER TABLE tokens DROP CONSTRAINT IF EXISTS tokens_token_key;')
+    except Exception as e:
+        # Constraint might not exist, that's fine
+        pass
     
     conn.commit()
     cur.close()
@@ -67,13 +75,11 @@ def store_certificate():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Insert or update the certificate data
+        # Insert certificate data (allows multiple entries with same token)
         cur.execute(
             """
             INSERT INTO tokens (token, de, para) 
             VALUES (%s, %s, %s) 
-            ON CONFLICT (token) 
-            DO UPDATE SET de = EXCLUDED.de, para = EXCLUDED.para
             RETURNING id, token, de, para, created_at
             """,
             (token, de, para)
