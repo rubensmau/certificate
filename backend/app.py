@@ -72,10 +72,13 @@ def health_check():
 @app.route("/api/certificate", methods=["POST"])
 def store_certificate():
     """Store certificate data (token, de, para) without validation"""
+    print("=== Certificate POST request received ===")
     try:
         data = request.get_json()
+        print(f"Request data: {data}")
 
         if not data:
+            print("ERROR: No data provided")
             return jsonify({"error": "No data provided"}), 400
 
         token = data.get("token")
@@ -83,8 +86,10 @@ def store_certificate():
         para = data.get("para")
 
         if not token:
+            print("ERROR: Token is required")
             return jsonify({"error": "Token is required"}), 400
 
+        print(f"Inserting: token={token}, de={de}, para={para}")
         conn = get_db_connection()
         cur = conn.cursor()
 
