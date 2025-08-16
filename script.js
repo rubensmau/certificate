@@ -17,7 +17,11 @@ class CertificateGenerator {
         
         // Backend API configuration - use relative path since frontend and backend are on same domain
         this.API_BASE_URL = '/api';
-        this.token = null;
+        
+        // Extract token from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        this.token = urlParams.get('token');
+        console.log('Token from URL:', this.token);
         
         this.backgroundImage = null;
         this.uploadedImage = null;
