@@ -26,9 +26,9 @@ def init_db():
         CREATE TABLE IF NOT EXISTS tokens (
             id SERIAL PRIMARY KEY,
             token VARCHAR(255) UNIQUE NOT NULL,
-            status VARCHAR(20) DEFAULT 'UNUSED',
-            created_at TIMESTAMP DEFAULT NOW(),
-            used_at TIMESTAMP
+            de VARCHAR(255),
+            para VARCHAR(255),
+            created_at TIMESTAMP DEFAULT NOW()
         );
     ''')
     
@@ -41,19 +41,36 @@ def health_check():
     """Health check endpoint"""
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
-@app.route('/tokens', methods=['POST'])
-def create_token():
-    """Create a new token"""
+
+@app.route('/certificate', methods=['POST'])
+def store_certificate():
+    """Store certificate data (token, de, para) without validation"""
     try:
-        # Generate unique token
-        token = str(uuid.uuid4())
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+            
+        token = data.get('token')
+        de = data.get('de')
+        para = data.get('para')
+        
+        if not token:
+            return jsonify({"error": "Token is required"}), 400
         
         conn = get_db_connection()
         cur = conn.cursor()
         
+        # Insert or update the certificate data
         cur.execute(
-            "INSERT INTO tokens (token) VALUES (%s) RETURNING id, token, status, created_at",
-            (token,)
+            """
+            INSERT INTO tokens (token, de, para) 
+            VALUES (%s, %s, %s) 
+            ON CONFLICT (token) 
+            DO UPDATE SET de = EXCLUDED.de, para = EXCLUDED.para
+            RETURNING id, token, de, para, created_at
+            """,
+            (token, de, para)
         )
         
         result = cur.fetchone()
@@ -63,89 +80,16 @@ def create_token():
         conn.close()
         
         return jsonify({
+            "id": result[0],
             "token": result[1],
-            "status": result[2],
-            "created_at": result[3].isoformat(),
-            "url": f"https://rubensmau.github.io/certificate/?token={result[1]}"
+            "de": result[2],
+            "para": result[3],
+            "created_at": result[4].isoformat()
         }), 201
         
     except Exception as e:
-        app.logger.error(f"Error creating token: {str(e)}")
-        return jsonify({"error": "Failed to create token"}), 500
-
-@app.route('/tokens/<token>', methods=['GET'])
-def validate_token(token):
-    """Validate token and mark as IN_USE"""
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # Check if token exists and is unused
-        cur.execute(
-            "SELECT * FROM tokens WHERE token = %s",
-            (token,)
-        )
-        
-        result = cur.fetchone()
-        
-        if not result:
-            cur.close()
-            conn.close()
-            return jsonify({"error": "Token not found"}), 404
-            
-        if result['status'] == 'COMPLETED':
-            cur.close()
-            conn.close()
-            return jsonify({"error": "Token already used"}), 400
-            
-        # Mark token as IN_USE if it was UNUSED
-        if result['status'] == 'UNUSED':
-            cur.execute(
-                "UPDATE tokens SET status = 'IN_USE' WHERE token = %s",
-                (token,)
-            )
-            conn.commit()
-        
-        cur.close()
-        conn.close()
-        
-        return jsonify({
-            "token": result['token'],
-            "status": "IN_USE",
-            "valid": True
-        }), 200
-        
-    except Exception as e:
-        app.logger.error(f"Error validating token: {str(e)}")
-        return jsonify({"error": "Failed to validate token"}), 500
-
-@app.route('/tokens/<token>', methods=['DELETE'])
-def complete_token(token):
-    """Mark token as COMPLETED (used)"""
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Update token status to COMPLETED
-        cur.execute(
-            "UPDATE tokens SET status = 'COMPLETED', used_at = NOW() WHERE token = %s AND status = 'IN_USE'",
-            (token,)
-        )
-        
-        if cur.rowcount == 0:
-            cur.close()
-            conn.close()
-            return jsonify({"error": "Token not found or not in use"}), 404
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({"message": "Token marked as completed"}), 200
-        
-    except Exception as e:
-        app.logger.error(f"Error completing token: {str(e)}")
-        return jsonify({"error": "Failed to complete token"}), 500
+        app.logger.error(f"Error storing certificate: {str(e)}")
+        return jsonify({"error": "Failed to store certificate"}), 500
 
 @app.route('/tokens', methods=['GET'])
 def list_tokens():
@@ -155,7 +99,7 @@ def list_tokens():
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
         cur.execute(
-            "SELECT token, status, created_at, used_at FROM tokens ORDER BY created_at DESC"
+            "SELECT id, token, de, para, created_at FROM tokens ORDER BY created_at DESC"
         )
         
         tokens = cur.fetchall()
@@ -166,7 +110,6 @@ def list_tokens():
         # Convert datetime objects to ISO format
         for token in tokens:
             token['created_at'] = token['created_at'].isoformat() if token['created_at'] else None
-            token['used_at'] = token['used_at'].isoformat() if token['used_at'] else None
         
         return jsonify({"tokens": tokens}), 200
         
