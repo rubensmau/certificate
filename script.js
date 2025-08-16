@@ -16,7 +16,7 @@ class CertificateGenerator {
         this.receiverCounter = document.getElementById('receiverCounter');
         
         // Backend API configuration - use relative path since frontend and backend are on same domain
-        this.API_BASE_URL = '';
+        this.API_BASE_URL = '/api';
         this.token = null;
         
         this.backgroundImage = null;
