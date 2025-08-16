@@ -22,7 +22,7 @@ def get_db_connection():
         port=5432,
         database="tokens",
         user="kkldb",
-        password="kkl181716",  # Make sure this is included
+        password=os.environ.get("DB_PASSWORD"),  # Make sure this is included
     )
     return conn
 
