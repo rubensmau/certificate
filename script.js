@@ -15,6 +15,10 @@ class CertificateGenerator {
         this.donorCounter = document.getElementById('donorCounter');
         this.receiverCounter = document.getElementById('receiverCounter');
         
+        // Backend API configuration
+        this.API_BASE_URL = 'https://certificate-q4q0.onrender.com';
+        this.token = null;
+        
         this.backgroundImage = null;
         this.uploadedImage = null;
         this.originalImage = null; // Store original for cropping
@@ -33,6 +37,9 @@ class CertificateGenerator {
     }
     
     init() {
+        // Extract token from URL parameters
+        this.extractTokenFromURL();
+        
         this.bindEvents();
         this.updateCharCounters();
 
@@ -45,6 +52,17 @@ class CertificateGenerator {
             // Draw anyway with fallback fonts
             this.createBackgroundImage();
         });
+    }
+    
+    extractTokenFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        this.token = urlParams.get('token');
+        
+        if (this.token) {
+            console.log('Token extracted from URL:', this.token);
+        } else {
+            console.log('No token found in URL parameters');
+        }
     }
     
     createBackgroundImage() {
@@ -369,8 +387,12 @@ class CertificateGenerator {
         this.canvas.style.cursor = 'crosshair';
     }
     
-    downloadCertificate() {
+    async downloadCertificate() {
         try {
+            // Send certificate data to backend first
+            await this.sendCertificateDataToBackend();
+            
+            // Then proceed with download
             // Check if canvas is tainted
             this.canvas.toDataURL();
             
@@ -387,6 +409,38 @@ class CertificateGenerator {
             } else {
                 alert('Download failed: ' + error.message);
             }
+        }
+    }
+    
+    async sendCertificateDataToBackend() {
+        if (!this.token) {
+            console.log('No token available, skipping backend call');
+            return;
+        }
+        
+        const certificateData = {
+            token: this.token,
+            de: this.donorInput.value.trim(),
+            para: this.receiverInput.value.trim()
+        };
+        
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/certificate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(certificateData)
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Certificate data saved successfully:', result);
+            } else {
+                console.error('Failed to save certificate data:', response.status, response.statusText);
+            }
+        } catch (error) {
+            console.error('Error sending certificate data to backend:', error);
         }
     }
     
