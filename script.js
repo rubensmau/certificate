@@ -37,8 +37,10 @@ class CertificateGenerator {
     }
     
     init() {
-        // Extract token from URL parameters
-        this.extractTokenFromURL();
+        // Extract token from URL parameters - if invalid, stop initialization
+        if (!this.extractTokenFromURL()) {
+            return; // Stop initialization if no valid token
+        }
         
         this.bindEvents();
         this.updateCharCounters();
@@ -58,11 +60,39 @@ class CertificateGenerator {
         const urlParams = new URLSearchParams(window.location.search);
         this.token = urlParams.get('token');
         
-        if (this.token) {
+        if (this.token && this.token.trim() !== '') {
             console.log('Token extracted from URL:', this.token);
+            return true;
         } else {
-            console.log('No token found in URL parameters');
+            console.log('No valid token found in URL parameters');
+            this.showTokenError();
+            return false;
         }
+    }
+    
+    showTokenError() {
+        // Hide the main interface
+        const container = document.querySelector('.container');
+        container.innerHTML = `
+            <div style="text-align: center; padding: 50px; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #dc3545; margin-bottom: 30px;">⚠️ Acesso Inválido</h1>
+                <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <p style="color: #721c24; font-size: 18px; margin: 0;">
+                        <strong>Token obrigatório não encontrado!</strong>
+                    </p>
+                </div>
+                <p style="color: #6c757d; line-height: 1.6;">
+                    Para acessar o gerador de certificados, você precisa de um link válido com token.<br>
+                    O formato correto é: <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px;">?token=seu-token-aqui</code>
+                </p>
+                <p style="color: #6c757d; margin-top: 30px;">
+                    <strong>Exemplos de URLs válidas:</strong><br>
+                    <code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 14px;">
+                        https://certificate-q4q0.onrender.com/?token=abc123
+                    </code>
+                </p>
+            </div>
+        `;
     }
     
     createBackgroundImage() {
