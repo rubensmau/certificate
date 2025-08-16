@@ -15,8 +15,8 @@ class CertificateGenerator {
         this.donorCounter = document.getElementById('donorCounter');
         this.receiverCounter = document.getElementById('receiverCounter');
         
-        // Backend API configuration
-        this.API_BASE_URL = 'https://certificate-q4q0.onrender.com';
+        // Backend API configuration - use relative path since frontend and backend are on same domain
+        this.API_BASE_URL = '';
         this.token = null;
         
         this.backgroundImage = null;

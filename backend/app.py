@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import os
 import uuid
@@ -7,7 +7,8 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime
 import logging
 
-app = Flask(__name__)
+# Set the static folder to the parent directory (where index.html is located)
+app = Flask(__name__, static_folder='..', static_url_path='')
 CORS(app)
 
 # Database configuration
@@ -35,6 +36,11 @@ def init_db():
     conn.commit()
     cur.close()
     conn.close()
+
+@app.route('/')
+def serve_index():
+    """Serve the main index.html page"""
+    return send_file('../index.html')
 
 @app.route('/health', methods=['GET'])
 def health_check():
